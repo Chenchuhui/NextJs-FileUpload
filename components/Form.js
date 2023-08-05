@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { mutate } from 'swr'
+import { FileUpload } from './FileUpload'
 
 
 const Form = ({ formId, projectForm, forNewPet = true }) => {
@@ -87,7 +88,7 @@ const handleUpload = async (e) => {
         body: formData,
       });
       const {data} = await response.json();
-      console.log(response.json())
+      console.log(data);
       if (response.ok) {
         // Handle success, e.g., show a success message
         console.log('Files uploaded successfully');

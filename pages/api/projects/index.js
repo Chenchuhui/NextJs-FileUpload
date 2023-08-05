@@ -1,5 +1,6 @@
 import dbConnect from '../../../lib/dbConnect'
 import Pet from '../../../models/Pet'
+import Project from '../../../models/Project'
 
 export default async function handler(req, res) {
   const { method } = req
@@ -17,10 +18,10 @@ export default async function handler(req, res) {
       break
     case 'POST':
       try {
-        const pet = await Pet.create(
+        const project = await Project.create(
           req.body
         ) /* create a new model in the database */
-        res.status(201).json({ success: true, data: pet })
+        res.status(201).json({ success: true, data: project })
       } catch (error) {
         res.status(400).json({ success: false })
       }
