@@ -1,6 +1,8 @@
 import { useRouter } from 'next/router'
 import useSWR from 'swr'
 import Form from '../../components/Form'
+// import dbConnect from '../../lib/dbConnect'
+// import File from '../../models/File'
 
 const fetcher = (url) =>
   fetch(url)
@@ -25,8 +27,8 @@ const EditPet = () => {
     description: project.description,
     files: project.files
   }
-
-  return <Form formId="edit-pet-form" projectForm={projectForm} forNewPet={false} />
+  const files = []
+  return <Form formId="edit-pet-form" projectForm={projectForm} projectFiles={files} forNewProject={false} />
 }
 
 export default EditPet

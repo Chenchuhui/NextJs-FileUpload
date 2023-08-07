@@ -6,8 +6,9 @@ const NewProject = () => {
     description: '',
     files: [],
   }
+  let files = []
 
-  return <Form formId="add-pet-form" projectForm={petForm} />
+  return <Form formId="add-pet-form" projectForm={petForm} projectFiles={files} />
 }
 
 export default NewProject

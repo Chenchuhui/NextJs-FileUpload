@@ -3,16 +3,17 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import dbConnect from '../../lib/dbConnect'
 import Project from '../../models/Project'
+import File from '../../models/File'
 
 /* Allows you to view pet card info and delete pet card*/
-const PetPage = ({ project }) => {
+const PetPage = ({ project, files }) => {
   const router = useRouter()
   const [message, setMessage] = useState('')
   const handleDelete = async () => {
-    const petID = router.query.id
+    const projectID = router.query.id
 
     try {
-      await fetch(`/api/projects/${petID}`, {
+      await fetch(`/api/projects/${projectID}`, {
         method: 'Delete',
       })
       router.push('/')
@@ -24,6 +25,7 @@ const PetPage = ({ project }) => {
   return (
     <div key={project._id}>
       <div className="card">
+        <img src={'kunkun.png'} />
         <h5 className="pet-name">{project.name}</h5>
         <div className="main-content">
           <p className="pet-name">{project.name}</p>
@@ -33,8 +35,12 @@ const PetPage = ({ project }) => {
           <div className="files info">
               <p className="label">Files</p>
               <ul>
-                {project.files.map((data, index) => (
-                  <li key={index}>{data} </li>
+                {files.map((data, index) => (
+                  <li key={index}>
+                    <Link href={data.url}>
+                      {data.description}
+                    </Link> 
+                  </li>
                 ))}
               </ul>
             </div>
@@ -62,8 +68,14 @@ export async function getServerSideProps({ params }) {
 
   const project = await Project.findById(params.id).lean()
   project._id = project._id.toString()
+  let files = await File.find({'_id': {$in: project.files}}).lean()
+  files = files.map((file) => {
+    file._id = file._id.toString()
+    return file;
+  })
+  project.files = project.files.map((file) => JSON.stringify(file))
 
-  return { props: { project } }
+  return { props: { project, files } }
 }
 
 export default PetPage

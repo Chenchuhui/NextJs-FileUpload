@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { mutate } from 'swr'
-import { FileUpload } from './FileUpload'
+// import ShowFiles from './showFiles'
+// import { FileUpload } from './FileUpload'
 
 
-const Form = ({ formId, projectForm, forNewPet = true }) => {
+const Form = ({ formId, projectForm, projectFiles, forNewProject = true }) => {
   const router = useRouter()
   const contentType = 'application/json'
   const [errors, setErrors] = useState({})
@@ -70,7 +71,6 @@ const Form = ({ formId, projectForm, forNewPet = true }) => {
 
   const handleFilesChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    console.log(selectedFiles);
     setUploadFiles(selectedFiles);
 }
 
@@ -91,6 +91,12 @@ const handleUpload = async (e) => {
       console.log(data);
       if (response.ok) {
         // Handle success, e.g., show a success message
+        const newFiles = form.files.concat(data);
+        console.log(newFiles);
+        setForm({
+          ...form,
+          ['files']: newFiles,
+        })
         console.log('Files uploaded successfully');
       } else {
         // Handle error, e.g., show an error message
@@ -126,7 +132,7 @@ const handleUpload = async (e) => {
     e.preventDefault()
     const errs = formValidate()
     if (Object.keys(errs).length === 0) {
-      forNewPet ? postData(form) : putData(form)
+      forNewProject ? postData(form) : putData(form)
     } else {
       setErrors({ errs })
     }
@@ -167,6 +173,7 @@ const handleUpload = async (e) => {
           multiple
           name="files"
           onChange={handleFilesChange} />
+        <span>{uploadedFiles.map(file => file.name).join(', ')}</span>
         <button onClick={handleUpload}>Upload</button>
 
         <button type="submit" className="btn">
