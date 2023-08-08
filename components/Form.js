@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { mutate } from 'swr'
-// import ShowFiles from './showFiles'
-// import { FileUpload } from './FileUpload'
+import Link from 'next/link'
 
 
 const Form = ({ formId, projectForm, projectFiles, forNewProject = true }) => {
@@ -160,11 +159,13 @@ const handleUpload = async (e) => {
           onChange={handleChange}
           required
         />
-
         <label htmlFor="files">Files</label>
         {<ul>
-          {form.files.map((data, index) => (
-            <li key={index}>{data} </li>
+          {projectFiles.map((data, index) => (
+            <li key={index}>{
+              <Link href={data.url}>
+                {data.description}
+              </Link> } </li>
           ))}
         </ul>}
         {/* <FileUpload/> */}

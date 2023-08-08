@@ -1,5 +1,4 @@
 import dbConnect from '../../../lib/dbConnect'
-import Pet from '../../../models/Pet'
 import Project from '../../../models/Project'
 
 export default async function handler(req, res) {
@@ -10,8 +9,8 @@ export default async function handler(req, res) {
   switch (method) {
     case 'GET':
       try {
-        const pets = await Pet.find({}) /* find all the data in our database */
-        res.status(200).json({ success: true, data: pets })
+        const proejcts = await Project.find({}) /* find all the data in our database */
+        res.status(200).json({ success: true, data: proejcts })
       } catch (error) {
         res.status(400).json({ success: false })
       }

@@ -1,17 +1,36 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
+import useSWR from 'swr'
 import Link from 'next/link'
-import dbConnect from '../../lib/dbConnect'
-import Project from '../../models/Project'
-import File from '../../models/File'
+// import dbConnect from '../../lib/dbConnect'
+// import Project from '../../models/Project'
+// import File from '../../models/File'
+
+const fetcher = (url) =>
+  fetch(url)
+    .then((res) => res.json())
 
 /* Allows you to view pet card info and delete pet card*/
-const PetPage = ({ project, files }) => {
+const ProjectPage = () => {
   const router = useRouter()
   const [message, setMessage] = useState('')
-  const handleDelete = async () => {
-    const projectID = router.query.id
+  const projectID = router.query.id
+  // Get Request to retrieve project data
+  const {
+    data,
+    error,
+    isLoading
+  } = useSWR(projectID ? `api/projects/${projectID}` : null, fetcher)
+  
+  const project = data?.project;
+  const files = data?.files;
+  console.log(project);
+  if (error) return <p>Failed to load the project</p>
+  if (isLoading) return <p>Loading...</p>
+  if (!project) return null
 
+  // Handling Delete Operation if Clicking Delete
+  const handleDelete = async () => {
     try {
       await fetch(`/api/projects/${projectID}`, {
         method: 'Delete',
@@ -63,19 +82,19 @@ const PetPage = ({ project, files }) => {
   )
 }
 
-export async function getServerSideProps({ params }) {
-  await dbConnect()
+// export async function getServerSideProps({ params }) {
+//   await dbConnect()
 
-  const project = await Project.findById(params.id).lean()
-  project._id = project._id.toString()
-  let files = await File.find({'_id': {$in: project.files}}).lean()
-  files = files.map((file) => {
-    file._id = file._id.toString()
-    return file;
-  })
-  project.files = project.files.map((file) => JSON.stringify(file))
+//   const project = await Project.findById(params.id).lean()
+//   project._id = project._id.toString()
+//   let files = await File.find({'_id': {$in: project.files}}).lean()
+//   files = files.map((file) => {
+//     file._id = file._id.toString()
+//     return file;
+//   })
+//   project.files = project.files.map((file) => JSON.stringify(file))
 
-  return { props: { project, files } }
-}
+//   return { props: { project, files } }
+// }
 
-export default PetPage
+export default ProjectPage
