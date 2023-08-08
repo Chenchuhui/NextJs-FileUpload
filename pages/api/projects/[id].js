@@ -18,7 +18,16 @@ export default async function handler(req, res) {
         if (!project) {
           return res.status(400).json({ success: false })
         }
-        res.status(200).json({ success: true, data: project })
+        let files = await File.find({'_id': {$in: project.files}}).lean()
+        if (!files) {
+          res.status(400).json({ success: false })
+      }
+      files = files.map((file) => {
+          file._id = file._id.toString()
+          return file;
+      })
+      project.files = project.files.map((file) => JSON.stringify(file))
+        res.status(200).json({ success: true, project: project, files: files })
       } catch (error) {
         res.status(400).json({ success: false })
       }
