@@ -4,7 +4,7 @@ import Project from '../models/Project'
 
 const Index = ({ projects }) => (
   <>
-    {/* Create a card for each pet */}
+    {/* Create a card for each project */}
     {projects.map((project) => (
       <div key={project._id}>
         <div className="card">
@@ -29,10 +29,10 @@ const Index = ({ projects }) => (
   </>
 )
 
-/* Retrieves pet(s) data from mongodb database */
+/* Retrieves project(s) data from mongodb database */
 export async function getServerSideProps() {
   await dbConnect()
-
+  
   /* find all the data in our database */
   const result = await Project.find({})
   const projects = result.map((doc) => {
