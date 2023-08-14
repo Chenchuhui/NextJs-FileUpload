@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-// mongoose.set('useFindAndModify', false);
 const fileScheme = mongoose.Schema({
     name: {
         type: String,
@@ -12,6 +11,11 @@ const fileScheme = mongoose.Schema({
     type: {
         type: String,
         required: true,
+    },
+    uploaded: {
+        // Check if the file is stored or not
+        type: Boolean,
+        default: false
     },
     url: {
         type: String,

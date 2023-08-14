@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-// mongoose.set('useFindAndModify', false);
 const projectScehme = mongoose.Schema({
     name: {
         type: String,

@@ -1,21 +1,73 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { mutate } from 'swr'
 import Link from 'next/link'
-
 
 const Form = ({ formId, projectForm, projectFiles, forNewProject = true }) => {
   const router = useRouter()
   const contentType = 'application/json'
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
+  const [files, setFiles] = useState(projectFiles);
+  const [newFiles, setNewFiles] = useState([]);
+  const [uploadState, setUploadState] = useState(0);
   const [uploadedFiles, setUploadFiles] = useState([]);
+  const [dataChanged, setDataChanged] = useState(false);
 
   const [form, setForm] = useState({
     name: projectForm.name,
     description: projectForm.description,
     files: projectForm.files
   })
+
+  const fileState = {
+    0: '',
+    1: 'File Uploading...',
+    2: 'Uploaded!'
+  }
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Listen to Next.js route change events
+    router.events.on('routeChangeStart', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [dataChanged]);
+
+  const handleBeforeUnload = (event) => {
+    if (dataChanged) {
+      event.preventDefault();
+      event.returnValue = 'You have unsaved changes! Are you sure you want to leave?';
+    }
+  };
+
+  const handleRouteChange = (url) => {
+    if (dataChanged) {
+      const userConfirmed = window.confirm('You have unsaved changes! Are you sure you want to leave?');
+      if (!userConfirmed) {
+        router.events.emit('routeChangeError');
+        throw 'Route change aborted.'; // This error can be caught by an error boundary or it will just log to the console, it's mainly to stop the route change.
+      }
+    }
+  };
+
+  // Post Method to update files state from false to true
+  const changeFilesState = async () => {
+    console.log(newFiles)
+    const res = await fetch(`/api/files/changestate`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ files: newFiles }),  // Send newFiles array as a part of request body
+    })
+    return res;
+}
 
   /* The PUT method edits an existing entry in the mongodb database. */
   const putData = async (form) => {
@@ -41,7 +93,7 @@ const Form = ({ formId, projectForm, projectFiles, forNewProject = true }) => {
       mutate(`/api/projects/${id}`, data, false) // Update the local data without a revalidation
       router.push('/')
     } catch (error) {
-      setMessage('Failed to update pet')
+      setMessage('Failed to update project')
     }
   }
 
@@ -61,56 +113,56 @@ const Form = ({ formId, projectForm, projectFiles, forNewProject = true }) => {
       if (!res.ok) {
         throw new Error(res.status)
       }
-
       router.push('/')
     } catch (error) {
       setMessage('Failed to add pet')
     }
   }
 
-  const handleFilesChange = (e) => {
+  const handleFilesChange = async (e) => {
+    e.preventDefault();
+    setUploadState(1)
     const selectedFiles = Array.from(e.target.files);
     setUploadFiles(selectedFiles);
-}
+    setDataChanged(true);
 
-const handleUpload = async (e) => {
-  e.preventDefault();
-
-  const formData = new FormData();
-  // Append each selected file to the FormData object
-  uploadedFiles.forEach((file, index) => {
-      formData.append(`file${index}`, file);
-  });
-  try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const {data} = await response.json();
-      console.log(data);
-      if (response.ok) {
-        // Handle success, e.g., show a success message
-        const newFiles = form.files.concat(data);
-        console.log(newFiles);
-        setForm({
-          ...form,
-          ['files']: newFiles,
-        })
-        console.log('Files uploaded successfully');
-      } else {
-        // Handle error, e.g., show an error message
-        console.error('Error uploading files');
+    const formData = new FormData();
+    // Append each selected file to the FormData object
+    selectedFiles.forEach((file, index) => {
+        formData.append(`file${index}`, file);
+    });
+    try {
+        const response = await fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const {data} = await response.json();
+        if (response.ok) {
+          // Handle success, e.g., show a success message
+          setNewFiles(data);
+          // console.log(newFiles);
+          setForm({
+            ...form,
+            ['files']: form.files.concat(data),
+          })
+          setUploadState(2)
+          console.log('Files uploaded successfully');
+        } else {
+          // Handle error, e.g., show an error message
+          console.error('Error uploading files');
+        }
+      } catch (error) {
+        console.error('Error uploading files:', error);
       }
-    } catch (error) {
-      console.error('Error uploading files:', error);
     }
-  }
 
 
   const handleChange = (e) => {
     const target = e.target
     const value = target.value
     const name = target.name
+
+    setDataChanged(true)
 
     setForm({
       ...form,
@@ -127,18 +179,57 @@ const handleUpload = async (e) => {
     return err
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = formValidate()
+    const res = await changeFilesState();
+    if (!res.ok) {
+      throw new Error(res)
+    }
     if (Object.keys(errs).length === 0) {
+      setDataChanged(false);
       forNewProject ? postData(form) : putData(form)
     } else {
       setErrors({ errs })
     }
   }
 
+  const handleFileDelete = async (e) => {
+    e.preventDefault()
+    const projectId = router.query.id;
+    const fileId = e.target.value;
+
+    // Optimistically update the UI
+    // const newFiles = form.files.filter(file => file !== fileId);
+    setForm(prevForm => ({
+      ...prevForm,
+      files: prevForm.files.filter(file => file !== fileId),
+    }
+    ));
+    try {
+      const response = await fetch(`/api/files/delete/${projectId}/${fileId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.status === 200) {
+        setFiles(files.filter(file => file._id !== fileId));
+        alert('File deleted successfully');
+      } else {
+        throw new Error('Failed to delete file on server');
+      }
+    } catch(err) {
+      console.log(err)
+      setForm(prevForm => ({
+        ...prevForm,
+        files: [...prevForm.files, fileId]
+      }));
+      alert('Failed to delete file');
+    }
+
+  }
+
   return (
-    <>
+    <div>
       <form id={formId} onSubmit={handleSubmit}>
         <label htmlFor="name">Name</label>
         <input
@@ -161,21 +252,25 @@ const handleUpload = async (e) => {
         />
         <label htmlFor="files">Files</label>
         {<ul>
-          {projectFiles.map((data, index) => (
-            <li key={index}>{
+          {files.map((data, index) => (
+            <div className="form-container" key={index}>
+            <span>
               <Link href={data.url}>
                 {data.description}
-              </Link> } </li>
+              </Link>
+            </span>
+            <button className="btn delete" onClick={handleFileDelete} value={data._id} type="button">DELETE</button>
+          </div>
+            
           ))}
         </ul>}
-        {/* <FileUpload/> */}
         <input 
           type="file" 
           multiple
           name="files"
           onChange={handleFilesChange} />
+        <p>{fileState[uploadState]}</p>
         <span>{uploadedFiles.map(file => file.name).join(', ')}</span>
-        <button onClick={handleUpload}>Upload</button>
 
         <button type="submit" className="btn">
           Submit
@@ -187,7 +282,7 @@ const handleUpload = async (e) => {
           <li key={index}>{err}</li>
         ))}
       </div>
-    </>
+    </div>
   )
 }
 

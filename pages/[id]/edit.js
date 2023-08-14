@@ -1,8 +1,6 @@
 import { useRouter } from 'next/router'
 import useSWR from 'swr'
 import Form from '../../components/Form'
-// import dbConnect from '../../lib/dbConnect'
-// import File from '../../models/File'
 
 const fetcher = (url) =>
   fetch(url)
@@ -18,10 +16,11 @@ const EditProject = () => {
   } = useSWR(id ? `/api/projects/${id}` : null, fetcher)
   const project = data?.project;
   const files = data?.files;
+  
   if (error) return <p>Failed to load</p>
   if (isLoading) return <p>Loading...</p>
   if (!project) return null
-
+  // console.log("shit:", project.files)
   const projectForm = {
     name: project.name,
     description: project.description,

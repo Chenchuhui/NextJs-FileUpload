@@ -26,7 +26,6 @@ export default async function handler(req, res) {
           file._id = file._id.toString()
           return file;
       })
-      project.files = project.files.map((file) => JSON.stringify(file))
         res.status(200).json({ success: true, project: project, files: files })
       } catch (error) {
         res.status(400).json({ success: false })
@@ -40,11 +39,11 @@ export default async function handler(req, res) {
           runValidators: true,
         })
         if (!project) {
-          return res.status(400).json({ success: false })
+          return res.status(400).json({ success: false , data: "No project found"})
         }
         res.status(200).json({ success: true, data: project })
       } catch (error) {
-        res.status(400).json({ success: false })
+        res.status(400).json({ success: false, data: error })
       }
       break
 

@@ -24,7 +24,6 @@ const ProjectPage = () => {
   
   const project = data?.project;
   const files = data?.files;
-  console.log(project);
   if (error) return <p>Failed to load the project</p>
   if (isLoading) return <p>Loading...</p>
   if (!project) return null
